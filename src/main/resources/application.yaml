@@ -1,3 +1,30 @@
 spring:
+  config:
+    import: optional:file:./.env[.properties]
+
   application:
     name: cryfio-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_HOST_PORT:5433}/${DB_NAME:cryfio}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
