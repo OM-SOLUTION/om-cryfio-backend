@@ -1,15 +1,10 @@
 package com.cryfio.account.registration.application;
 
-import com.cryfio.account.domain.Account;
-import com.cryfio.account.domain.AccountEmailVerification;
-import com.cryfio.account.domain.AccountEncryptionMaterial;
-import com.cryfio.account.domain.AccountProfile;
+import com.cryfio.account.domain.*;
 import com.cryfio.account.domain.enums.AccountStatus;
 import com.cryfio.account.registration.dto.*;
-import com.cryfio.account.repository.AccountEmailVerificationRepository;
-import com.cryfio.account.repository.AccountEncryptionMaterialRepository;
-import com.cryfio.account.repository.AccountProfileRepository;
-import com.cryfio.account.repository.AccountRepository;
+import com.cryfio.account.repository.*;
+import com.cryfio.authentication.srp.SrpConfiguration;
 import com.cryfio.common.exception.ApiException;
 import com.cryfio.common.exception.ErrorCode;
 import lombok.AllArgsConstructor;
@@ -38,6 +33,7 @@ public class RegistrationService {
     private final VerificationCodeSender verificationCodeSender;
     private final RegistrationTokenService registrationTokenService;
     private final AccountEncryptionMaterialRepository accountEncryptionMaterialRepository;
+    private final AccountSrpCredentialRepository accountSrpCredentialRepository;
 
 
     @Transactional
@@ -113,9 +109,7 @@ public class RegistrationService {
     public CompleteRegistrationResponse uploadEncryptionMaterial(String registrationToken, UploadEncryptionMaterialRequest request) {
         UUID accountId = registrationTokenService
                 .findAccountId(registrationToken)
-                .orElseThrow(() -> new ApiException(
-                        ErrorCode.REGISTRATION_TOKEN_INVALID
-                ));
+                .orElseThrow(() -> new ApiException(ErrorCode.REGISTRATION_TOKEN_INVALID));
 
 
         Account account = accountRepository.findById(accountId)
@@ -141,6 +135,8 @@ public class RegistrationService {
 
         UploadEncryptionMaterialRequest.Cipher cipher = backup.cipher();
 
+        UploadEncryptionMaterialRequest.SrpCredentials srpCredentials = request.srpCredentials();
+        validateSrpConfiguration(srpCredentials);
         byte[] identityPublicKey = Base64ValueDecoder.decodeExactly(identity.publicKey(), "encryptionIdentity.publicKey", 32);
 
         byte[] backupPublicKey = Base64ValueDecoder.decodeExactly(backup.publicKey(), "privateKeyBackup.publicKey", 32);
@@ -153,11 +149,8 @@ public class RegistrationService {
         byte[] cipherNonce = Base64ValueDecoder.decodeExactly(cipher.nonce(), "privateKeyBackup.cipher.nonce", 12);
         byte[] cipherCiphertext = Base64ValueDecoder.decodeAtLeast(cipher.ciphertext(), "privateKeyBackup.cipher.ciphertext", 1);
 
-        byte[] cipherTag = Base64ValueDecoder.decodeExactly(
-                cipher.tag(),
-                "privateKeyBackup.cipher.tag",
-                16
-        );
+        byte[] cipherTag = Base64ValueDecoder.decodeExactly(cipher.tag(), "privateKeyBackup.cipher.tag", 16);
+        byte[] srpVerifier = Base64ValueDecoder.decodeExactly(srpCredentials.verifier(),"srpCredentials.verifier", SrpConfiguration.VERIFIER_BYTES);
 
         AccountEncryptionMaterial encryptionMaterial = AccountEncryptionMaterial.create(
                         account,
@@ -180,6 +173,20 @@ public class RegistrationService {
                 );
 
         accountEncryptionMaterialRepository.save(encryptionMaterial);
+        AccountSrpCredential srpCredential  = AccountSrpCredential.create(
+                account,
+                srpCredentials.protocol(),
+                srpCredentials.groupId(),
+                srpCredentials.hashAlgorithm(),
+                srpVerifier,
+                kdf.algorithm(),
+                kdfSalt,
+                kdf.memoryKiB(),
+                kdf.iterations(),
+                kdf.parallelism(),
+                kdf.outputBytes()
+        );
+        accountSrpCredentialRepository.save(srpCredential);
 
         Instant activatedAt = Instant.now();
         account.activate(activatedAt);
@@ -202,5 +209,16 @@ public class RegistrationService {
                     }
                 }
         );
+    }
+    private void validateSrpConfiguration(UploadEncryptionMaterialRequest.SrpCredentials  srpCredentials){
+        if(!SrpConfiguration.PROTOCOL.equals(srpCredentials.protocol())){
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "Unsupported SRP group");
+        }
+        if (!SrpConfiguration.GROUP_ID.equals(srpCredentials.groupId())) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "Unsupported SRP group");
+        }
+        if(!SrpConfiguration.HASH_ALGORITHM.equals(srpCredentials.hashAlgorithm())){
+            throw new ApiException(ErrorCode.INVALID_REQUEST, "Unsupported SRP hash algorithm");
+        }
     }
 }

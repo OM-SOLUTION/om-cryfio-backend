@@ -35,8 +35,20 @@ public class SecurityConfig {
                                 ).permitAll()
                                 .requestMatchers("/actuator/health")
                                 .permitAll()
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/v1/auth/srp/start"
+                                )
+                                .permitAll()
+                                .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/v1/auth/srp/finish"
+                                )
+                                .permitAll()
                                 .anyRequest()
+
                                 .authenticated()
+
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable);

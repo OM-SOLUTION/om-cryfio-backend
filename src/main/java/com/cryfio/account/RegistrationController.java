@@ -1,4 +1,4 @@
-package com.cryfio.account.controlller;
+package com.cryfio.account;
 
 import com.cryfio.account.registration.dto.*;
 import com.cryfio.account.registration.application.RegistrationService;

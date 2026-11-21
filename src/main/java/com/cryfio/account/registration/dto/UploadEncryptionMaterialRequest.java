@@ -3,6 +3,8 @@ package com.cryfio.account.registration.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
+
+
 public record UploadEncryptionMaterialRequest(
         @Min(value = 1, message = "schemaVersion must be 1")
         @Max(value = 1, message = "schemaVersion must be 1")
@@ -14,7 +16,11 @@ public record UploadEncryptionMaterialRequest(
 
         @NotNull(message = "privateKeyBackup is required")
         @Valid
-        PrivateKeyBackup privateKeyBackup
+        PrivateKeyBackup privateKeyBackup,
+
+        @NotNull(message = "srpCredentials is required")
+        @Valid
+        SrpCredentials srpCredentials
 ) {
     public record EncryptionIdentity(
             @NotBlank(message = "encryptionIdentity.algorithm is required")
@@ -87,4 +93,21 @@ public record UploadEncryptionMaterialRequest(
             String tag
     ) {
     }
+    public record SrpCredentials(
+
+            @NotBlank(message = "srpCredentials.protocol is required")
+            @Pattern(regexp = "^SRP-6a$", message = "srpCredentials.protocol must be SRP-6a")
+            String protocol,
+
+            @NotBlank(message = "srpCredentials.groupId is required")
+            @Pattern(regexp = "^RFC5054_3072$", message = "srpCredentials.groupId must be RFC5054_3072")
+            String groupId,
+
+            @NotBlank(message = "srpCredentials.hashAlgorithm is required")
+            @Pattern(regexp = "^SHA-256$", message = "srpCredentials.hashAlgorithm must be SHA-256")
+            String hashAlgorithm,
+
+            @NotBlank(message = "srpCredentials.verifier is required")
+            String verifier
+    ) {}
 }
