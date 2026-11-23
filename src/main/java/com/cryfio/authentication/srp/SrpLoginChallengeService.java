@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +21,7 @@ public class SrpLoginChallengeService {
     private static final int CHALLENGE_ID_BYTES = 32;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper ;
     public String create(
             UUID accountId,
             byte[] clientPublicValue,

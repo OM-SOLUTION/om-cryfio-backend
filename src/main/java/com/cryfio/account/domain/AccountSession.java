@@ -90,7 +90,12 @@ public class AccountSession {
     public void updateLastActivity(Instant lastActivityAt) {
         this.lastActivityAt = Objects.requireNonNull(lastActivityAt, "Last activity time is required");
     }
-
+    public boolean isUsable(Instant now){
+        return this.revokedAt == null && this.expiresAt.isAfter(now);
+    }
+    public void rotateRefreshToken(byte[] refreshTokenHash) {
+        this.refreshTokenHash = requireRefreshTokenHash(refreshTokenHash);
+    }
     private static byte[] requireRefreshTokenHash(byte[] refreshTokenHash) {
         if (refreshTokenHash == null || refreshTokenHash.length != 32) {
             throw new IllegalArgumentException("Refresh token hash must contain exactly 32 bytes");

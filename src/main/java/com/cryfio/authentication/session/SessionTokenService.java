@@ -20,14 +20,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class SessionTokenService {
-    public  static final Duration ACCES_TOKEN_TTL = Duration.ofMinutes(15);
+    public  static final Duration ACCESS_TOKEN_TTL = Duration.ofMinutes(15);
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofHours(6);
     private static final int REFRESH_TOKEN_BYTES = 32;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final JwtEncoder jwtEncoder;
     public String createAccessToken(UUID accountId, UUID sessionId, Instant issuedAt) {
-        Instant expiresAt  = issuedAt.plus(ACCES_TOKEN_TTL);
+        Instant expiresAt  = issuedAt.plus(ACCESS_TOKEN_TTL);
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(accountId.toString())
                 .issuedAt(issuedAt)
@@ -43,6 +43,19 @@ public class SessionTokenService {
         SECURE_RANDOM.nextBytes(randomBytes);
         String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
         return new RefreshToken(rawToken,sha256(rawToken),issuedAt.plus(REFRESH_TOKEN_TTL));
+    }
+    public RefreshToken rotateRefreshToken(Instant existingSessionExpiresAt){
+        if(!existingSessionExpiresAt.isAfter(Instant.now())){
+            throw new IllegalStateException("Session has already expired");
+        }
+        byte[] randomBytes = new byte[REFRESH_TOKEN_BYTES];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        return new RefreshToken(
+                rawToken,
+                sha256(rawToken),
+                existingSessionExpiresAt
+        );
     }
 
     public byte[] hashRefreshToken(String refreshToken) {
