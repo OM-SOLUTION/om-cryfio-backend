@@ -32,3 +32,10 @@ spring:
 authentication:
   fake-salt-secret: ${AUTH_FAKE_SALT_SECRET}
   jwt-secret: ${AUTH_JWT_SECRET}
+storage:
+  garage:
+    endpoint: ${GARAGE_ENDPOINT}
+    region: ${GARAGE_REGION:garage}
+    access-key: ${GARAGE_ACCESS_KEY}
+    secret-key: ${GARAGE_SECRET_KEY}
+    bucket: ${GARAGE_BUCKET}

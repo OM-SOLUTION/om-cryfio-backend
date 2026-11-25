@@ -28,7 +28,26 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  garage:
+    image: dxflrs/garage:v2.5.0
+    command:
+      - /garage
+      - server
+      - --single-node
+      - --default-bucket
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: ${GARAGE_BUCKET}
+    ports:
+      - "127.0.0.1:${GARAGE_S3_PORT}:3900"
+    volumes:
+      - ./garage/garage.toml:/etc/garage.toml:ro
+      - cryfio_garage_meta:/var/lib/garage/meta
+      - cryfio_garage_data:/var/lib/garage/data
 
 volumes:
   cryfio_postgres_data:
   cryfio_redis_data:
+  cryfio_garage_meta:
+  cryfio_garage_data:
