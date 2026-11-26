@@ -24,6 +24,7 @@ public class GarageUploadUrlService {
 
     public static final long MULTIPART_PART_SIZE_BYTES = 16L * 1024L * 1024L;
     private static final Duration UPLOAD_URL_TTL = Duration.ofMinutes(15);
+    private static final Duration DOWNLOAD_URL_TTL = Duration.ofMinutes(15);
 
     private final S3Client garageS3Client;
     private final S3Presigner garageS3Presigner;
@@ -163,7 +164,22 @@ public class GarageUploadUrlService {
                 List.copyOf(uploadParts)
         );
     }
-
+    public PreparedDownload preparedDownload(String storageObjectKey) {
+        Instant expiresAt = Instant.now().plus(UPLOAD_URL_TTL);
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(garageStorageProperties.getBucket())
+                .key(storageObjectKey)
+                .build();
+        PresignedGetObjectRequest presignedGetObjectRequest = garageS3Presigner.presignGetObject(
+                GetObjectPresignRequest.builder()
+                        .signatureDuration(DOWNLOAD_URL_TTL)
+                        .getObjectRequest(getObjectRequest)
+                        .build());
+        return new PreparedDownload(
+                presignedGetObjectRequest.url().toString(),
+                expiresAt
+        );
+    }
     private static long expectedPartSize(long encryptedSizeBytes, int partNumber) {
         long bytesBeforePart = (long) (partNumber - 1) * MULTIPART_PART_SIZE_BYTES;
 
@@ -185,5 +201,9 @@ public class GarageUploadUrlService {
     public record CompletedUploadPart(
             int partNumber,
             String eTag
+    ){}
+    public record PreparedDownload(
+            String downloadUrl,
+            Instant expiresAt
     ){}
 }

@@ -23,4 +23,5 @@ public interface FileVersionRepository extends JpaRepository<FileVersion, UUID> 
     """)
     long sumEncryptedBytesByOwnerAndStatusIn(@Param("ownerAccountId") UUID ownerAccountId, @Param("statuses") Collection<FileVersionStatus> statuses);
     Optional<FileVersion> findByIdAndResource_Owner_Id(UUID versionId,UUID ownerAccountId);
+    Optional<FileVersion> findByResource_IdAndStatus(UUID resourceId,FileVersionStatus status);
 }
