@@ -1,0 +1,41 @@
+spring:
+  config:
+    import: optional:file:./.env[.properties]
+
+  application:
+    name: cryfio-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_HOST_PORT:5433}/${DB_NAME:cryfio}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+authentication:
+  fake-salt-secret: ${AUTH_FAKE_SALT_SECRET}
+  jwt-secret: ${AUTH_JWT_SECRET}
+storage:
+  garage:
+    endpoint: ${GARAGE_ENDPOINT}
+    region: ${GARAGE_REGION:garage}
+    access-key: ${GARAGE_ACCESS_KEY}
+    secret-key: ${GARAGE_SECRET_KEY}
+    bucket: ${GARAGE_BUCKET}
